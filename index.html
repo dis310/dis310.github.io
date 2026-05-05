@@ -1,753 +1,124 @@
-<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NexaLineOS · 极简科技风桌面</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none; /* 避免拖动时产生文本选择，提升体验 */
-        }
-
-        body {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'Inter', 'Segoe UI', 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
-            background: #0A0F1C;
-        }
-
-        /* 桌面主容器 - 科技感渐变背景 */
-        .nexa-desktop {
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(ellipse at 30% 40%, #0F172A, #030712);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* 动态网格叠加层，增加科技纹理 */
-        .grid-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 150, 255, 0.08) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 150, 255, 0.08) 1px, transparent 1px);
-            background-size: 48px 48px;
-            pointer-events: none;
-        }
-
-        /* 桌面图标区域 - 现代圆角风格 */
-        .desktop-icons {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            z-index: 20;
-        }
-
-        .desktop-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 88px;
-            padding: 12px 6px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            background: rgba(18, 25, 45, 0.5);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #E2E8F0;
-        }
-
-        .desktop-icon:hover {
-            background: rgba(37, 99, 235, 0.45);
-            border-color: rgba(96, 165, 250, 0.8);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 18px -8px rgba(0, 0, 0, 0.4);
-        }
-
-        .desktop-icon i {
-            font-size: 32px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-            color: #3B82F6;
-        }
-
-        .desktop-icon span {
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 10px;
-            letter-spacing: 0.3px;
-        }
-
-        /* 窗口系统 - 极简圆角玻璃风格 */
-        .nexa-window {
-            position: absolute;
-            background: rgba(18, 28, 40, 0.92);
-            backdrop-filter: blur(24px);
-            border-radius: 28px;
-            border: 1px solid rgba(59, 130, 246, 0.4);
-            box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(59, 130, 246, 0.3) inset;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 100;
-            transition: box-shadow 0.2s, border-color 0.1s;
-            min-width: 380px;
-            min-height: 280px;
-            resize: both;
-        }
-
-        .nexa-window.active-window {
-            border-color: #3B82F6;
-            box-shadow: 0 30px 50px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px #3B82F6 inset;
-            z-index: 200;
-        }
-
-        /* 窗口标题栏 - 极简无边界设计 */
-        .window-bar {
-            padding: 16px 20px 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: grab;
-            background: rgba(15, 23, 42, 0.6);
-            border-bottom: 1px solid rgba(59, 130, 246, 0.25);
-            border-radius: 28px 28px 0 0;
-        }
-
-        .window-bar:active {
-            cursor: grabbing;
-        }
-
-        .window-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 550;
-            font-size: 14px;
-            letter-spacing: 0.2px;
-            color: #F1F5F9;
-        }
-
-        .window-title i {
-            color: #3B82F6;
-            font-size: 18px;
-        }
-
-        .window-actions {
-            display: flex;
-            gap: 12px;
-        }
-
-        .window-actions button {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #CBD5E1;
-            transition: all 0.15s;
-            font-size: 14px;
-        }
-
-        .window-actions button:hover {
-            background: #1E293B;
-            color: white;
-        }
-
-        .close-btn:hover {
-            background: #EF4444 !important;
-            color: white;
-        }
-
-        /* 窗口内容区 - 清爽内边距 */
-        .window-content {
-            flex: 1;
-            padding: 20px;
-            color: #E2E8F0;
-            overflow-y: auto;
-            font-size: 13px;
-            line-height: 1.5;
-            background: rgba(10, 16, 28, 0.35);
-            border-radius: 0 0 28px 28px;
-        }
-
-        /* 自定义滚动条 - 科技风 */
-        ::-webkit-scrollbar {
-            width: 6px;
-            background: transparent;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1E293B;
-            border-radius: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #3B82F6;
-            border-radius: 8px;
-        }
-
-        /* 任务栏 - 磨砂玻璃 + 悬浮感 */
-        .nexa-taskbar {
-            position: absolute;
-            bottom: 16px;
-            left: 20px;
-            right: 20px;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(32px);
-            border-radius: 48px;
-            border: 1px solid rgba(59, 130, 246, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 20px;
-            z-index: 1000;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .start-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .start-logo {
-            background: #2563EB;
-            padding: 8px 20px;
-            border-radius: 40px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 15px;
-            color: white;
-            transition: 0.2s;
-            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
-        }
-
-        .start-logo:hover {
-            background: #1D4ED8;
-            transform: scale(0.97);
-        }
-
-        .taskbar-window-list {
-            display: flex;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.25);
-            padding: 4px 12px;
-            border-radius: 48px;
-            overflow-x: auto;
-            max-width: 55%;
-        }
-
-        .taskbar-item {
-            background: rgba(30, 41, 59, 0.7);
-            padding: 6px 18px;
-            border-radius: 32px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.15s;
-            color: #E2E8F0;
-            border: 1px solid rgba(59,130,246,0.3);
-        }
-
-        .taskbar-item.active-task {
-            background: #2563EB;
-            border-color: #93C5FD;
-            color: white;
-            box-shadow: 0 2px 10px rgba(37,99,235,0.5);
-        }
-
-        .taskbar-item:hover {
-            background: #3B82F6;
-            color: white;
-        }
-
-        .clock-panel {
-            font-family: 'JetBrains Mono', monospace;
-            background: #0F172A;
-            padding: 7px 18px;
-            border-radius: 36px;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            color: #BAE6FD;
-            border: 1px solid #2563EB30;
-        }
-
-        /* 开始菜单 - 圆润玻璃质感 */
-        .nexa-startmenu {
-            position: absolute;
-            bottom: 80px;
-            left: 24px;
-            width: 320px;
-            background: rgba(18, 28, 45, 0.96);
-            backdrop-filter: blur(32px);
-            border-radius: 32px;
-            border: 1px solid rgba(59, 130, 246, 0.5);
-            padding: 12px 0;
-            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.5);
-            z-index: 1100;
-            animation: menuFloat 0.2s ease-out;
-            transform-origin: bottom left;
-        }
-
-        @keyframes menuFloat {
-            from {
-                opacity: 0;
-                transform: translateY(18px) scale(0.96);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .menu-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid #2D3A5E;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            color: white;
-        }
-
-        .menu-header i {
-            font-size: 34px;
-            color: #3B82F6;
-        }
-
-        .menu-apps {
-            padding: 8px 0;
-        }
-
-        .menu-app-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 24px;
-            cursor: pointer;
-            transition: 0.1s;
-            color: #E2E8F0;
-            font-size: 14px;
-        }
-
-        .menu-app-item i {
-            width: 26px;
-            color: #60A5FA;
-        }
-
-        .menu-app-item:hover {
-            background: rgba(59,130,246,0.35);
-        }
-
-        hr {
-            margin: 8px 20px;
-            border-color: #2D3A5E;
-        }
-
-        /* 隐藏类 */
-        .hidden {
-            display: none;
-        }
-
-        /* 一些科技感点缀 */
-        .glow-text {
-            text-shadow: 0 0 4px #3B82F6;
-        }
-        button, .taskbar-item, .start-logo {
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-<div class="nexa-desktop" id="nexaDesktop">
-    <div class="grid-overlay"></div>
-
-    <!-- 桌面图标区域 -->
-    <div class="desktop-icons">
-        <div class="desktop-icon" data-app="explorer">
-            <i class="fas fa-folder-open"></i>
-            <span>文件中心</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexaLineOS</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/winbox@0.2.82/dist/css/winbox.min.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/winbox@0.2.82/dist/winbox.bundle.min.js"></script>
+    <script defer src="./js/storage.js"></script>
+    <script defer src="./js/auth.js"></script>
+    <script defer src="./js/apps.js"></script>
+    <script defer src="./js/desktop.js"></script>
+    <script defer src="./js/main.js"></script>
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <section id="boot-screen" class="screen boot-screen active">
+        <div class="boot-orb"></div>
+        <div class="boot-brand">
+          <div class="logo">N</div>
+          <div>
+            <h1>NexaLineOS</h1>
+            <p>Booting system core</p>
+          </div>
         </div>
-        <div class="desktop-icon" data-app="browser">
-            <i class="fas fa-globe"></i>
-            <span>Nexa浏览器</span>
+        <div class="boot-bar"><span id="boot-progress"></span></div>
+        <div id="boot-status" class="boot-status">Initializing secure shell...</div>
+      </section>
+
+      <section id="login-screen" class="screen login-screen">
+        <div class="glass-card login-card">
+          <div class="brand">
+            <div class="logo large">N</div>
+            <div>
+              <h2>NexaLineOS</h2>
+              <p>Sign in to continue</p>
+            </div>
+          </div>
+
+          <form id="login-form" class="login-form">
+            <label>
+              <span>用户名</span>
+              <input id="username" name="username" type="text" autocomplete="username" placeholder="请输入用户名" />
+            </label>
+            <label>
+              <span>密码</span>
+              <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" />
+            </label>
+            <button type="submit" class="primary-btn">登录 NexaLineOS</button>
+          </form>
+
+          <div id="login-message" class="login-message"></div>
+          <button id="open-user-btn" type="button" class="open-user-btn">开放用户名单</button>
         </div>
-        <div class="desktop-icon" data-app="terminal">
-            <i class="fas fa-code"></i>
-            <span>终端控制台</span>
+      </section>
+
+      <section id="desktop-screen" class="screen desktop-screen">
+        <div class="desktop-wallpaper"></div>
+        <div class="topbar glass-bar">
+          <div class="sys-title">
+            <span class="dot"></span>
+            <span>NexaLineOS</span>
+          </div>
+          <div id="clock" class="clock"></div>
         </div>
-        <div class="desktop-icon" data-app="notes">
-            <i class="fas fa-pen-fancy"></i>
-            <span>灵感笔记</span>
+
+        <main class="desktop-stage">
+          <div id="desktop-icons" class="desktop-icons"></div>
+        </main>
+
+        <button id="import-app-btn" class="import-fab" type="button">导入</button>
+
+        <footer class="taskbar glass-bar">
+          <button id="start-btn" class="start-btn" type="button">N</button>
+          <div id="task-items" class="task-items"></div>
+          <div id="taskbar-clock" class="taskbar-clock"></div>
+        </footer>
+      </section>
+
+      <div id="start-menu" class="start-menu hidden" aria-hidden="true">
+        <button type="button" data-action="logout">注销</button>
+        <button type="button" data-action="restart">重启</button>
+        <button type="button" data-action="shutdown">关机</button>
+      </div>
+
+      <div id="context-menu" class="context-menu hidden" aria-hidden="true"></div>
+
+      <div id="shutdown-screen" class="shutdown-screen hidden" aria-hidden="true">
+        <div class="shutdown-core">
+          <div class="logo large">N</div>
+          <p id="shutdown-text">正在关机...</p>
         </div>
-        <div class="desktop-icon" data-app="settings">
-            <i class="fas fa-sliders-h"></i>
-            <span>系统设置</span>
+      </div>
+
+      <div id="import-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card glass-card">
+          <h3>导入应用</h3>
+          <p>输入一个网页 URL，系统会保存配置并在桌面生成图标。</p>
+          <form id="import-form" class="import-form">
+            <input id="app-url" type="url" placeholder="https://example.com" required />
+            <div class="modal-actions">
+              <button id="cancel-import" type="button" class="ghost-btn">取消</button>
+              <button type="submit" class="primary-btn">导入并保存</button>
+            </div>
+          </form>
         </div>
+      </div>
+
+      <div id="open-user-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card glass-card open-user-card">
+          <div class="open-user-head">
+            <h3>开放用户名单</h3>
+            <button id="close-open-user" type="button" class="ghost-btn">关闭</button>
+          </div>
+          <div id="open-user-list" class="open-user-list"></div>
+        </div>
+      </div>
     </div>
-
-    <!-- 任务栏 -->
-    <div class="nexa-taskbar">
-        <div class="start-area">
-            <div class="start-logo" id="startButton">
-                <i class="fas fa-bolt"></i> <span>NexaLine</span>
-            </div>
-            <div class="taskbar-window-list" id="taskbarList"></div>
-        </div>
-        <div class="clock-panel" id="clockWidget">--:--</div>
-    </div>
-
-    <!-- 开始菜单面板 -->
-    <div id="startMenuPanel" class="nexa-startmenu hidden">
-        <div class="menu-header">
-            <i class="fas fa-microchip"></i>
-            <div><strong>NexaLineOS</strong><br><span style="font-size: 11px;">极简 · 未来交互</span></div>
-        </div>
-        <div class="menu-apps">
-            <div class="menu-app-item" data-app="explorer"><i class="fas fa-folder-open"></i> 文件中心</div>
-            <div class="menu-app-item" data-app="browser"><i class="fas fa-globe"></i> Nexa浏览器</div>
-            <div class="menu-app-item" data-app="terminal"><i class="fas fa-code"></i> 终端控制台</div>
-            <div class="menu-app-item" data-app="notes"><i class="fas fa-pen-fancy"></i> 灵感笔记</div>
-            <div class="menu-app-item" data-app="settings"><i class="fas fa-sliders-h"></i> 系统设置</div>
-        </div>
-        <hr>
-        <div class="menu-app-item" id="lockMenuItem"><i class="fas fa-lock"></i> 锁定 / 注销</div>
-    </div>
-</div>
-
-<script>
-    // ---------- NexaLineOS 窗口管理核心 ----------
-    let windowsCollection = [];      // 存储窗口对象
-    let nextWindowId = 100;
-    let activeWindowId = null;
-    let globalZ = 800;
-
-    // 拖拽状态
-    let dragContext = {
-        active: false,
-        element: null,
-        offsetX: 0,
-        offsetY: 0
-    };
-
-    // 应用内容模板 (科技简洁内容)
-    const appTemplates = {
-        explorer: `<div style="display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: flex; gap: 20px; border-bottom: 1px solid #2D3A5E; padding-bottom: 10px;"><i class="fas fa-database"></i> 快速访问</div>
-            <div><i class="fas fa-hard-drive"></i> 系统盘 (C:)</div>
-            <div><i class="fas fa-cloud"></i> NexaDrive</div>
-            <div><i class="fas fa-image"></i> 图片库</div>
-            <div><i class="fas fa-video"></i> 视频素材</div>
-            <div style="margin-top: 12px; background:#0F172A; border-radius: 20px; padding: 10px;">📊 存储: 234 GB / 512 GB</div>
-        </div>`,
-        browser: `<div>
-            <div style="background: #111827; border-radius: 34px; padding: 6px 12px; display: flex; gap: 8px; margin-bottom: 20px;">
-                <i class="fas fa-search"></i> <input type="text" value="nexaline.space/explore" style="background: transparent; border:none; width: 100%; color:white; outline: none;">
-            </div>
-            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                <div style="background:#1E293B; padding: 16px; border-radius: 24px; width:100%;"><i class="fas fa-newspaper"></i> 科技前沿 · 极客周报</div>
-                <div style="background:#1E293B; padding: 12px; border-radius: 20px; margin-top: 10px;">✨ Nexa AI 助手现已集成</div>
-                <div style="margin-top: 12px; color:#90CAF9;">欢迎来到极速浏览器，低延迟体验</div>
-            </div>
-        </div>`,
-        terminal: `<div style="font-family: 'Fira Code', monospace; background:#0A0F1C; border-radius: 24px; padding: 14px;">
-            <div><span style="color:#3B82F6;">➜</span> <span style="color:#E2E8F0;">~ NexaTerminal v2.0</span></div>
-            <div id="terminalOutputArea" style="margin: 12px 0; min-height: 100px;"></div>
-            <div style="display: flex; gap: 8px;"><span style="color:#3B82F6;">❯</span> <input type="text" id="nexaTermInput" placeholder="输入 help / date / neofetch" style="background:#0F172A; border:1px solid #2563EB; border-radius: 40px; padding: 8px; width:100%; color:#BAE6FD;"></div>
-        </div>`,
-        notes: `<div style="display:flex; flex-direction:column; gap:12px;">
-            <textarea id="smartNote" style="background:#0F172A; border:1px solid #3B82F6; border-radius: 24px; padding: 16px; color: #F1F5F9; min-height:150px; font-size:13px;">✍️ NexaLineOS 笔记...\n记录灵感，创造未来。</textarea>
-            <div style="display: flex; justify-content: flex-end;"><button id="saveNoteBtn" style="background:#2563EB; border: none; border-radius: 40px; padding: 8px 20px; color:white;">保存快照</button></div>
-        </div>`,
-        settings: `<div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><span><i class="fas fa-moon"></i> 深色模式</span> <span style="color:#3B82F6;">已启用</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><span><i class="fas fa-circle-notch"></i> 动效速度</span> <span>动态极速</span></div>
-            <div><i class="fas fa-palette"></i> 主题: 星河蓝调</div>
-            <div style="margin-top: 24px; background:#0F172A; border-radius: 28px; padding: 12px;">NexaLineOS 版本 1.0 | 极简之道</div>
-        </div>`
-    };
-
-    // 更新任务栏显示
-    function updateTaskbarUI() {
-        const taskbarContainer = document.getElementById('taskbarList');
-        taskbarContainer.innerHTML = '';
-        windowsCollection.forEach(win => {
-            const taskBtn = document.createElement('div');
-            taskBtn.className = `taskbar-item ${activeWindowId === win.id ? 'active-task' : ''}`;
-            taskBtn.innerHTML = `<i class="${win.iconClass}"></i><span>${win.title}</span>`;
-            taskBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (win.dom.style.display === 'none') win.dom.style.display = 'flex';
-                bringWindowToFront(win.id);
-            });
-            taskbarContainer.appendChild(taskBtn);
-        });
-    }
-
-    // 置顶窗口
-    function bringWindowToFront(winId) {
-        const target = windowsCollection.find(w => w.id === winId);
-        if (!target) return;
-        activeWindowId = winId;
-        globalZ += 2;
-        target.dom.style.zIndex = globalZ;
-        target.dom.classList.add('active-window');
-        windowsCollection.forEach(w => {
-            if (w.id !== winId) w.dom.classList.remove('active-window');
-        });
-        updateTaskbarUI();
-    }
-
-    // 关闭窗口
-    function closeWindowById(winId) {
-        const idx = windowsCollection.findIndex(w => w.id === winId);
-        if (idx === -1) return;
-        const win = windowsCollection[idx];
-        win.dom.remove();
-        if (activeWindowId === winId) {
-            const remaining = windowsCollection.filter(w => w.id !== winId);
-            activeWindowId = remaining.length ? remaining[0].id : null;
-            if (activeWindowId) bringWindowToFront(activeWindowId);
-        }
-        windowsCollection.splice(idx, 1);
-        updateTaskbarUI();
-    }
-
-    // 最小化窗口
-    function minimizeWindow(winId) {
-        const winObj = windowsCollection.find(w => w.id === winId);
-        if (winObj) {
-            winObj.dom.style.display = 'none';
-            if (activeWindowId === winId) {
-                const nextActive = windowsCollection.find(w => w.id !== winId && w.dom.style.display !== 'none');
-                if (nextActive) bringWindowToFront(nextActive.id);
-                else activeWindowId = null;
-            }
-            updateTaskbarUI();
-        }
-    }
-
-    // 创建核心窗口
-    function createNexaWindow(appId, title, iconClass, leftPos, topPos, width = 520, height = 380) {
-        const winId = nextWindowId++;
-        const winDiv = document.createElement('div');
-        winDiv.className = 'nexa-window';
-        winDiv.style.left = `${leftPos}px`;
-        winDiv.style.top = `${topPos}px`;
-        winDiv.style.width = `${width}px`;
-        winDiv.style.height = `${height}px`;
-        winDiv.style.zIndex = ++globalZ;
-
-        // 标题栏
-        const titleBar = document.createElement('div');
-        titleBar.className = 'window-bar';
-        titleBar.innerHTML = `
-            <div class="window-title">
-                <i class="${iconClass}"></i> ${title}
-            </div>
-            <div class="window-actions">
-                <button class="minimize-window" data-action="min">─</button>
-                <button class="close-window" data-action="close">✕</button>
-            </div>
-        `;
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'window-content';
-        // 注入内容
-        let contentHtml = appTemplates[appId] || `<div style="padding:20px;">应用预览: ${title}<br><i class="fas fa-cog"></i> 科技组件开发中</div>`;
-        contentDiv.innerHTML = contentHtml;
-
-        // 绑定终端动态事件
-        if (appId === 'terminal') {
-            setTimeout(() => {
-                const inputTerm = document.getElementById('nexaTermInput');
-                if (inputTerm) {
-                    inputTerm.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            const cmd = inputTerm.value;
-                            const outArea = document.getElementById('terminalOutputArea');
-                            if (outArea) {
-                                const line = document.createElement('div');
-                                line.innerHTML = `<span style="color:#60A5FA;">$></span> ${cmd}`;
-                                outArea.appendChild(line);
-                                if (cmd === 'date') line.innerHTML += ` → ${new Date().toLocaleString()}`;
-                                else if (cmd === 'help') line.innerHTML += ` → 支持: date, neofetch, cls`;
-                                else if (cmd === 'neofetch') line.innerHTML += ` → NexaLineOS 极简发行版`;
-                                else if (cmd === 'cls') outArea.innerHTML = '';
-                                else line.innerHTML += ` → 未识别的命令: ${cmd}`;
-                                inputTerm.value = '';
-                                if (cmd !== 'cls') outArea.scrollTop = outArea.scrollHeight;
-                            }
-                        }
-                    });
-                }
-            }, 10);
-        }
-        if (appId === 'notes') {
-            setTimeout(() => {
-                const saveBtn = document.getElementById('saveNoteBtn');
-                if (saveBtn) {
-                    saveBtn.addEventListener('click', () => {
-                        const noteTextarea = document.getElementById('smartNote');
-                        alert(`📌 笔记已保存 (模拟): ${noteTextarea?.value.slice(0, 40)}...`);
-                    });
-                }
-            }, 10);
-        }
-
-        winDiv.appendChild(titleBar);
-        winDiv.appendChild(contentDiv);
-        document.getElementById('nexaDesktop').appendChild(winDiv);
-
-        // 按钮控制
-        const minBtn = titleBar.querySelector('[data-action="min"]');
-        const closeBtn = titleBar.querySelector('[data-action="close"]');
-        minBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            minimizeWindow(winId);
-        });
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            closeWindowById(winId);
-        });
-
-        // 拖动功能
-        titleBar.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.window-actions')) return;
-            e.preventDefault();
-            bringWindowToFront(winId);
-            const rect = winDiv.getBoundingClientRect();
-            dragContext.active = true;
-            dragContext.element = winDiv;
-            dragContext.offsetX = e.clientX - rect.left;
-            dragContext.offsetY = e.clientY - rect.top;
-        });
-
-        windowsCollection.push({
-            id: winId,
-            dom: winDiv,
-            title: title,
-            iconClass: iconClass,
-            appId: appId
-        });
-        bringWindowToFront(winId);
-        updateTaskbarUI();
-        return winId;
-    }
-
-    // 全局鼠标移动拖拽
-    document.addEventListener('mousemove', (e) => {
-        if (!dragContext.active || !dragContext.element) return;
-        e.preventDefault();
-        let nx = e.clientX - dragContext.offsetX;
-        let ny = e.clientY - dragContext.offsetY;
-        const maxX = window.innerWidth - dragContext.element.offsetWidth;
-        const maxY = window.innerHeight - dragContext.element.offsetHeight - 65;
-        nx = Math.min(Math.max(0, nx), maxX);
-        ny = Math.min(Math.max(0, ny), maxY);
-        dragContext.element.style.left = `${nx}px`;
-        dragContext.element.style.top = `${ny}px`;
-    });
-    document.addEventListener('mouseup', () => {
-        dragContext.active = false;
-        dragContext.element = null;
-    });
-
-    // 应用打开统一函数
-    function launchApplication(appType, offsetIndex = 0) {
-        const baseX = 80 + offsetIndex * 32;
-        const baseY = 70 + offsetIndex * 28;
-        switch (appType) {
-            case 'explorer': createNexaWindow('explorer', '文件中心', 'fas fa-folder-open', baseX, baseY, 540, 400); break;
-            case 'browser': createNexaWindow('browser', 'Nexa浏览器', 'fas fa-globe', baseX+15, baseY+12, 540, 410); break;
-            case 'terminal': createNexaWindow('terminal', '终端控制台', 'fas fa-code', baseX, baseY, 550, 420); break;
-            case 'notes': createNexaWindow('notes', '灵感笔记', 'fas fa-pen-fancy', baseX, baseY, 500, 380); break;
-            case 'settings': createNexaWindow('settings', '系统设置', 'fas fa-sliders-h', baseX+20, baseY+20, 480, 370); break;
-            default: break;
-        }
-    }
-
-    // 桌面图标点击 & 开始菜单绑定
-    document.querySelectorAll('.desktop-icon').forEach(icon => {
-        const app = icon.getAttribute('data-app');
-        icon.addEventListener('click', () => launchApplication(app, windowsCollection.length % 6));
-    });
-
-    // 开始菜单逻辑
-    const startBtn = document.getElementById('startButton');
-    const startPanel = document.getElementById('startMenuPanel');
-    function toggleStartMenu(force) {
-        if (force === undefined) startPanel.classList.toggle('hidden');
-        else if (force) startPanel.classList.remove('hidden');
-        else startPanel.classList.add('hidden');
-    }
-    startBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleStartMenu();
-    });
-    document.addEventListener('click', (e) => {
-        if (!startPanel.contains(e.target) && e.target !== startBtn && !startBtn.contains(e.target)) {
-            startPanel.classList.add('hidden');
-        }
-    });
-    document.querySelectorAll('.menu-app-item[data-app]').forEach(item => {
-        item.addEventListener('click', (e) => {
-            const app = item.getAttribute('data-app');
-            if (app) launchApplication(app, windowsCollection.length);
-            startPanel.classList.add('hidden');
-        });
-    });
-    const lockItem = document.getElementById('lockMenuItem');
-    lockItem.addEventListener('click', () => {
-        alert('🔒 NexaLineOS 安全锁屏 (模拟)');
-        startPanel.classList.add('hidden');
-    });
-
-    // 时间动态
-    function refreshClock() {
-        const now = new Date();
-        const timeText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second:'2-digit' });
-        document.getElementById('clockWidget').innerHTML = `<i class="far fa-clock" style="margin-right:6px;"></i>${timeText}`;
-    }
-    refreshClock();
-    setInterval(refreshClock, 1000);
-    
-    // 欢迎窗口（初次加载）
-    setTimeout(() => {
-        createNexaWindow('settings', '欢迎来到 NexaLineOS', 'fas fa-bolt', 140, 100, 460, 320);
-    }, 200);
-    
-    // 边界调整/窗口大小约束
-    window.addEventListener('resize', () => {
-        windowsCollection.forEach(win => {
-            const rect = win.dom.getBoundingClientRect();
-            const maxLeft = window.innerWidth - win.dom.offsetWidth;
-            const maxTop = window.innerHeight - win.dom.offsetHeight - 70;
-            if (rect.left > maxLeft) win.dom.style.left = `${Math.max(0, maxLeft)}px`;
-            if (rect.top > maxTop) win.dom.style.top = `${Math.max(0, maxTop)}px`;
-            if (rect.left < 0) win.dom.style.left = '0px';
-            if (rect.top < 0) win.dom.style.top = '0px';
-        });
-    });
-</script>
-</body>
+  </body>
 </html>
